@@ -27,6 +27,8 @@ This is a note-taking application built with Vue.js, C#, and SQL Server.
 * **Front-End:** Vue.js, Typescript, Tailwind CSS
 * **Back-End:** C# (ASP.NET Core Web API)
 * **Database:** SQL Server
+* **IDE:** Visual studio code
+  
 
 ## Functional Requirements
 
