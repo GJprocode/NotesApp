@@ -1,16 +1,33 @@
-import './assets/main.css'
+// Import the main stylesheet for the app
+import './assets/main.css';
 
-import { createApp } from 'vue'
-import { createPinia } from 'pinia'
+// Import Vue framework
+import { createApp } from 'vue';
 
-import App from './App.vue'
-import router from './router'
+// Import Pinia for state management
+import { createPinia } from 'pinia';
 
+// Import the main App component
+import App from './App.vue';
 
+// Import the router for navigation
+import router from './router';
 
-const app = createApp(App)
+// Create the Vue app instance
+const app = createApp(App);
 
-app.use(createPinia())
-app.use(router)
+// Add Pinia state management to the app
+app.use(createPinia());
 
-app.mount('#app')
+// Add the router to manage page navigation
+app.use(router);
+
+// Mount the app to the #app element in index.html
+app.mount('#app');
+
+/**
+ * Summary:
+ * - This is the main entry point for the Vue.js application.
+ * - It initializes the app, sets up state management with Pinia, and configures routing.
+ * - Finally, it mounts the app to the DOM element with the ID `#app`.
+ */
