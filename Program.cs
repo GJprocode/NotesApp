@@ -2,7 +2,7 @@ using DotNetEnv; // Load environment variables from .env file
 using System.Data; // Required for IDbConnection
 using Microsoft.Data.SqlClient;
 using Microsoft.IdentityModel.Tokens;
-using NotesAppBackend.Data; // Import the namespace for repositories
+using NotesBE.Data; // Import the namespace for repositories
 using Microsoft.OpenApi.Models;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -22,17 +22,16 @@ Console.WriteLine(connectionString);
 
 // Load JWT configuration
 string jwtSecret = Env.GetString("JWT_SECRET") ?? throw new InvalidOperationException("JWT_SECRET is missing.");
-string jwtIssuer = Env.GetString("JWT_ISSUER") ?? "NotesAppBackend";
-string jwtAudience = Env.GetString("JWT_AUDIENCE") ?? "NotesAppBackendUsers";
+string jwtIssuer = Env.GetString("JWT_ISSUER") ?? "NotesBE";
+string jwtAudience = Env.GetString("JWT_AUDIENCE") ?? "NotesBEUsers";
 
-// Register services and middleware
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title = "NotesAppBackend",
+        Title = "NotesBE",
         Version = "v1",
         Description = "API documentation for NotesApp backend"
     });
@@ -61,9 +60,10 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 });
+
 builder.Services.AddScoped<NoteRepository>();
 builder.Services.AddScoped<UserRepository>();
-builder.Services.AddScoped<IDbConnection>(sp => new SqlConnection(connectionString));
+builder.Services.AddScoped<IDbConnection>(_ => new SqlConnection(connectionString));
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -80,8 +80,15 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Logging.ClearProviders();
-builder.Logging.AddConsole();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
 
 var app = builder.Build();
 
@@ -97,6 +104,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseCors("AllowAll");
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -114,6 +122,11 @@ catch (SqlException ex)
 {
     Console.WriteLine($"Error connecting to SQL Server: {ex.Message}");
 }
+
+
+app.UseCors("AllowAll");
+
+app.MapControllers();
 
 app.Run();
 

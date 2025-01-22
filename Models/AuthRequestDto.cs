@@ -1,4 +1,4 @@
-namespace NotesAppBackend.Models
+namespace NotesBE.Models
 {
     public class AuthRequestDto
     {

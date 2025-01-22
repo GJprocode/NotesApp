@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
-using NotesAppBackend.Data;
-using NotesAppBackend.Models;
-using NotesAppBackend.Utils;
+using NotesBE.Data;
+using NotesBE.Models;
+using NotesBE.Utils;
 using System;
 
-namespace NotesAppBackend.Controllers
+namespace NotesBE.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
@@ -16,17 +16,23 @@ namespace NotesAppBackend.Controllers
         public AuthController(UserRepository userRepository, IConfiguration configuration)
         {
             _userRepository = userRepository;
-            _jwtSecret = configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT secret is not configured.");
+            _jwtSecret = configuration["JWT_SECRET"] ?? throw new InvalidOperationException("JWT_SECRET is not configured.");
         }
 
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] User user)
         {
-            // Validate input
             if (string.IsNullOrWhiteSpace(user.Password))
-                return BadRequest("Password is required.");
+                return BadRequest(new { Error = "Password is required." });
 
-            // Generate password hash and salt
+            var existingUserByUsername = await _userRepository.GetUserByUsernameAsync(user.Username);
+            if (existingUserByUsername != null)
+                return Conflict(new { Error = "Username already exists." });
+
+            var existingUserByEmail = await _userRepository.GetUserByEmailAsync(user.Email);
+            if (existingUserByEmail != null)
+                return Conflict(new { Error = "Email already exists." });
+
             PasswordHelper.CreatePasswordHash(user.Password, out byte[] passwordHash, out byte[] passwordSalt);
             user.PasswordHash = passwordHash;
             user.PasswordSalt = passwordSalt;
@@ -43,13 +49,20 @@ namespace NotesAppBackend.Controllers
             if (existingUser == null || existingUser.PasswordHash == null || existingUser.PasswordSalt == null)
                 return Unauthorized("Invalid username or password.");
 
-            // Verify password hash
             if (!PasswordHelper.VerifyPasswordHash(user.Password, existingUser.PasswordHash, existingUser.PasswordSalt))
                 return Unauthorized("Invalid username or password.");
 
-            // Generate JWT token
-            var token = JwtHelper.GenerateToken(existingUser.Username, existingUser.Id, _jwtSecret);
-            return Ok(new { Token = token });
+            try
+            {
+                var token = JwtHelper.GenerateToken(existingUser.Username, existingUser.Id, _jwtSecret);
+                Console.WriteLine($"JWT Token generated for user {existingUser.Username}: {token}");
+                return Ok(new { Token = token });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error generating token: {ex.Message}");
+                return StatusCode(500, "An error occurred while generating the token.");
+            }
         }
     }
 }

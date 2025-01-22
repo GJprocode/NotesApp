@@ -1,8 +1,8 @@
 using Dapper;
 using System.Data;
-using NotesAppBackend.Models;
+using NotesBE.Models;
 
-namespace NotesAppBackend.Data
+namespace NotesBE.Data
 {
     public class UserRepository
     {
@@ -30,6 +30,13 @@ namespace NotesAppBackend.Data
             string query = "SELECT * FROM Users WHERE Username = @Username";
             return await _dbConnection.QueryFirstOrDefaultAsync<User>(query, new { Username = username });
         }
+
+        public async Task<User?> GetUserByEmailAsync(string email)
+        {
+            string query = "SELECT * FROM Users WHERE Email = @Email";
+            return await _dbConnection.QueryFirstOrDefaultAsync<User>(query, new { Email = email });
+        }
+
 
         public async Task<int> CreateUserAsync(User user)
         {

@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
-using NotesAppBackend.Data;
-using NotesAppBackend.Models;
+using NotesBE.Data;
+using NotesBE.Models;
 
-namespace NotesAppBackend.Controllers;
+namespace NotesBE.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]

@@ -1,9 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using NotesAppBackend.Data;
-using NotesAppBackend.Models;
+using NotesBE.Data;
+using NotesBE.Models;
+using System.Security.Claims;
 
-namespace NotesAppBackend.Controllers
+namespace NotesBE.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
@@ -16,47 +17,47 @@ namespace NotesAppBackend.Controllers
             _noteRepository = noteRepository;
         }
 
-        [HttpGet]
-        [Authorize]
-        public async Task<IActionResult> GetNotes([FromQuery] string? titleFilter, [FromQuery] int? userIdFilter)
+        // Helper method to get UserId from claims
+        private int? GetUserIdFromClaims()
         {
-            var notes = await _noteRepository.GetAllNotesAsync();
-
-            if (!string.IsNullOrEmpty(titleFilter))
-                notes = notes.Where(n => n.Title.Contains(titleFilter, StringComparison.OrdinalIgnoreCase));
-
-            if (userIdFilter.HasValue)
-                notes = notes.Where(n => n.UserId == userIdFilter);
-
-            return Ok(notes);
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "userId");
+            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
+            {
+                return userId;
+            }
+            return null;
         }
 
-        // Search Notes endpoint
-        [HttpGet("search")]
+        [HttpGet]
         [Authorize]
-        public async Task<IActionResult> SearchNotes([FromQuery] string? query)
+        public async Task<IActionResult> GetNotes([FromQuery] string? titleFilter = null)
         {
-            if (string.IsNullOrEmpty(query))
-                return BadRequest("Search query cannot be empty.");
+            var userId = GetUserIdFromClaims();
+            if (userId == null) return Unauthorized();
 
-            var notes = await _noteRepository.GetAllNotesAsync();
+            var notes = await _noteRepository.GetNotesByUserIdAsync(userId.Value);
 
-            // Search in Title and Content
-            var filteredNotes = notes.Where(n =>
-                (!string.IsNullOrEmpty(n.Title) && n.Title.Contains(query, StringComparison.OrdinalIgnoreCase)) ||
-                (!string.IsNullOrEmpty(n.Content) && n.Content.Contains(query, StringComparison.OrdinalIgnoreCase))
-            );
+            if (!string.IsNullOrEmpty(titleFilter))
+            {
+                notes = notes.Where(n => n.Title.Contains(titleFilter, StringComparison.OrdinalIgnoreCase));
+            }
 
-            return Ok(filteredNotes);
+            return Ok(notes);
         }
 
         [HttpGet("{id}")]
         [Authorize]
         public async Task<IActionResult> GetNoteById(int id)
         {
+            var userId = GetUserIdFromClaims();
+            if (userId == null) return Unauthorized();
+
             var note = await _noteRepository.GetNoteByIdAsync(id);
-            if (note == null)
-                return NotFound();
+            if (note == null || note.UserId != userId)
+            {
+                return NotFound("Note not found or you do not have access.");
+            }
+
             return Ok(note);
         }
 
@@ -64,35 +65,77 @@ namespace NotesAppBackend.Controllers
         [Authorize]
         public async Task<IActionResult> CreateNote([FromBody] Note note)
         {
+            var userId = GetUserIdFromClaims();
+            if (userId == null) return Unauthorized();
+
+            note.UserId = userId.Value;
             note.CreatedAt = note.UpdatedAt = DateTime.UtcNow;
-            var id = await _noteRepository.CreateNoteAsync(note);
-            note.Id = id;
-            return CreatedAtAction(nameof(GetNoteById), new { id = note.Id }, note);
+
+            try
+            {
+                var id = await _noteRepository.CreateNoteAsync(note);
+                note.Id = id;
+                return CreatedAtAction(nameof(GetNoteById), new { id = note.Id }, note);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
         }
 
         [HttpPut("{id}")]
         [Authorize]
         public async Task<IActionResult> UpdateNote(int id, [FromBody] Note note)
         {
+            var userId = GetUserIdFromClaims();
+            if (userId == null) return Unauthorized();
+
             if (id != note.Id)
-                return BadRequest();
+            {
+                return BadRequest("Note ID mismatch.");
+            }
+
             var existingNote = await _noteRepository.GetNoteByIdAsync(id);
-            if (existingNote == null)
-                return NotFound();
+            if (existingNote == null || existingNote.UserId != userId)
+            {
+                return NotFound("Note not found or you do not have access.");
+            }
+
             note.UpdatedAt = DateTime.UtcNow;
-            await _noteRepository.UpdateNoteAsync(note);
-            return NoContent();
+
+            try
+            {
+                await _noteRepository.UpdateNoteAsync(note);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
         }
 
         [HttpDelete("{id}")]
         [Authorize]
         public async Task<IActionResult> DeleteNote(int id)
         {
+            var userId = GetUserIdFromClaims();
+            if (userId == null) return Unauthorized();
+
             var existingNote = await _noteRepository.GetNoteByIdAsync(id);
-            if (existingNote == null)
-                return NotFound();
-            await _noteRepository.DeleteNoteAsync(id, existingNote.UserId);
-            return NoContent();
+            if (existingNote == null || existingNote.UserId != userId)
+            {
+                return NotFound("Note not found or you do not have access.");
+            }
+
+            try
+            {
+                await _noteRepository.DeleteNoteAsync(id, userId.Value);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
         }
     }
 }

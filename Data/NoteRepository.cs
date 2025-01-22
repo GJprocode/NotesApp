@@ -1,8 +1,8 @@
 using Dapper;
 using System.Data;
-using NotesAppBackend.Models;
+using NotesBE.Models;
 
-namespace NotesAppBackend.Data
+namespace NotesBE.Data
 {
     public class NoteRepository
     {
@@ -13,21 +13,24 @@ namespace NotesAppBackend.Data
             _dbConnection = dbConnection;
         }
 
-        public async Task<IEnumerable<Note>> GetAllNotesAsync()
+        // Retrieves all notes for a specific user
+        public async Task<IEnumerable<Note>> GetNotesByUserIdAsync(int userId)
         {
-            string query = "SELECT * FROM Notes";
-            return await _dbConnection.QueryAsync<Note>(query);
+            const string query = "SELECT * FROM Notes WHERE UserId = @UserId";
+            return await _dbConnection.QueryAsync<Note>(query, new { UserId = userId });
         }
 
+        // Retrieves a note by its ID
         public async Task<Note?> GetNoteByIdAsync(int id)
         {
-            string query = "SELECT * FROM Notes WHERE Id = @Id";
+            const string query = "SELECT * FROM Notes WHERE Id = @Id";
             return await _dbConnection.QueryFirstOrDefaultAsync<Note>(query, new { Id = id });
         }
 
+        // Creates a new note in the database
         public async Task<int> CreateNoteAsync(Note note)
         {
-            string query = @"
+            const string query = @"
                 INSERT INTO Notes (UserId, Title, Content, CreatedAt, UpdatedAt)
                 VALUES (@UserId, @Title, @Content, @CreatedAt, @UpdatedAt);
                 SELECT CAST(SCOPE_IDENTITY() as int);
@@ -35,9 +38,10 @@ namespace NotesAppBackend.Data
             return await _dbConnection.ExecuteScalarAsync<int>(query, note);
         }
 
+        // Updates an existing note in the database
         public async Task<bool> UpdateNoteAsync(Note note)
         {
-            string query = @"
+            const string query = @"
                 UPDATE Notes
                 SET Title = @Title, Content = @Content, UpdatedAt = @UpdatedAt
                 WHERE Id = @Id AND UserId = @UserId;
@@ -46,9 +50,10 @@ namespace NotesAppBackend.Data
             return rowsAffected > 0;
         }
 
+        // Deletes a note by ID and UserId
         public async Task<bool> DeleteNoteAsync(int id, int userId)
         {
-            string query = "DELETE FROM Notes WHERE Id = @Id AND UserId = @UserId";
+            const string query = "DELETE FROM Notes WHERE Id = @Id AND UserId = @UserId";
             int rowsAffected = await _dbConnection.ExecuteAsync(query, new { Id = id, UserId = userId });
             return rowsAffected > 0;
         }

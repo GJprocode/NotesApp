@@ -1,6 +1,6 @@
 using System.Security.Cryptography;
 
-namespace NotesAppBackend.Utils
+namespace NotesBE.Utils
 {
     public static class PasswordHelper
     {
