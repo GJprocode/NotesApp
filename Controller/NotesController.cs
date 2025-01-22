@@ -1,141 +1,101 @@
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using NotesBE.Data;
-using NotesBE.Models;
-using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization; // For securing endpoints with authorization policies.
+using Microsoft.AspNetCore.Mvc; // Provides functionality for API controller actions.
+using NotesBE.Data; // Repository for interacting with the Notes table.
+using NotesBE.Models; // Contains the Note model.
 
 namespace NotesBE.Controllers
 {
-    [ApiController]
-    [Route("api/[controller]")]
+    [ApiController] // Indicates that this class is an API controller.
+    [Route("api/[controller]")] // Defines the base route for this controller as "api/notes".
     public class NotesController : ControllerBase
     {
-        private readonly NoteRepository _noteRepository;
+        private readonly NoteRepository _noteRepository; // Repository for managing note operations.
 
         public NotesController(NoteRepository noteRepository)
         {
-            _noteRepository = noteRepository;
+            _noteRepository = noteRepository; // Dependency injection of the NoteRepository.
         }
 
-        // Helper method to get UserId from claims
-        private int? GetUserIdFromClaims()
-        {
-            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "userId");
-            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
-            {
-                return userId;
-            }
-            return null;
-        }
-
+        // GET: api/notes
         [HttpGet]
-        [Authorize]
+        [Authorize] // Ensures the endpoint is accessible only by authenticated users.
         public async Task<IActionResult> GetNotes([FromQuery] string? titleFilter = null)
         {
-            var userId = GetUserIdFromClaims();
-            if (userId == null) return Unauthorized();
+            // Retrieve the user ID from the JWT claims.
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "userId");
+            if (userIdClaim == null) return Unauthorized(); // User is not authorized if the claim is missing.
 
-            var notes = await _noteRepository.GetNotesByUserIdAsync(userId.Value);
+            int userId = int.Parse(userIdClaim.Value); // Parse the userId from the claim.
+            var notes = await _noteRepository.GetNotesByUserIdAsync(userId); // Fetch notes for the user.
 
+            // Apply title filter if provided.
             if (!string.IsNullOrEmpty(titleFilter))
             {
                 notes = notes.Where(n => n.Title.Contains(titleFilter, StringComparison.OrdinalIgnoreCase));
             }
 
-            return Ok(notes);
+            return Ok(notes); // Return the filtered notes.
         }
 
-        [HttpGet("{id}")]
-        [Authorize]
-        public async Task<IActionResult> GetNoteById(int id)
-        {
-            var userId = GetUserIdFromClaims();
-            if (userId == null) return Unauthorized();
-
-            var note = await _noteRepository.GetNoteByIdAsync(id);
-            if (note == null || note.UserId != userId)
-            {
-                return NotFound("Note not found or you do not have access.");
-            }
-
-            return Ok(note);
-        }
-
+        // POST: api/notes
         [HttpPost]
-        [Authorize]
+        [Authorize] // Ensures only authenticated users can create notes.
         public async Task<IActionResult> CreateNote([FromBody] Note note)
         {
-            var userId = GetUserIdFromClaims();
-            if (userId == null) return Unauthorized();
+            // Retrieve the user ID from the JWT claims.
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "userId");
+            if (userIdClaim == null) return Unauthorized();
 
-            note.UserId = userId.Value;
-            note.CreatedAt = note.UpdatedAt = DateTime.UtcNow;
+            int userId = int.Parse(userIdClaim.Value); // Parse the userId from the claim.
+            note.UserId = userId; // Assign the userId to the note.
+            note.CreatedAt = note.UpdatedAt = DateTime.UtcNow; // Set timestamps for note creation.
 
-            try
-            {
-                var id = await _noteRepository.CreateNoteAsync(note);
-                note.Id = id;
-                return CreatedAtAction(nameof(GetNoteById), new { id = note.Id }, note);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+            var id = await _noteRepository.CreateNoteAsync(note); // Save the note to the database.
+            note.Id = id; // Assign the generated ID to the note object.
+
+            return CreatedAtAction(nameof(GetNotes), new { id = note.Id }, note); // Return the created note.
         }
 
+        // PUT: api/notes/{id}
         [HttpPut("{id}")]
-        [Authorize]
+        [Authorize] // Ensures only authenticated users can update notes.
         public async Task<IActionResult> UpdateNote(int id, [FromBody] Note note)
         {
-            var userId = GetUserIdFromClaims();
-            if (userId == null) return Unauthorized();
+            if (id != note.Id) return BadRequest(); // Validate that the path ID matches the note ID.
 
-            if (id != note.Id)
-            {
-                return BadRequest("Note ID mismatch.");
-            }
+            // Retrieve the user ID from the JWT claims.
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "userId");
+            if (userIdClaim == null) return Unauthorized();
 
+            int userId = int.Parse(userIdClaim.Value); // Parse the userId from the claim.
+
+            // Check if the note exists and belongs to the current user.
             var existingNote = await _noteRepository.GetNoteByIdAsync(id);
-            if (existingNote == null || existingNote.UserId != userId)
-            {
-                return NotFound("Note not found or you do not have access.");
-            }
+            if (existingNote == null || existingNote.UserId != userId) return NotFound();
 
-            note.UpdatedAt = DateTime.UtcNow;
+            note.UpdatedAt = DateTime.UtcNow; // Update the timestamp.
+            await _noteRepository.UpdateNoteAsync(note); // Save the changes to the database.
 
-            try
-            {
-                await _noteRepository.UpdateNoteAsync(note);
-                return NoContent();
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+            return NoContent(); // Return a success response with no content.
         }
 
+        // DELETE: api/notes/{id}
         [HttpDelete("{id}")]
-        [Authorize]
+        [Authorize] // Ensures only authenticated users can delete notes.
         public async Task<IActionResult> DeleteNote(int id)
         {
-            var userId = GetUserIdFromClaims();
-            if (userId == null) return Unauthorized();
+            // Retrieve the user ID from the JWT claims.
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "userId");
+            if (userIdClaim == null) return Unauthorized();
 
+            int userId = int.Parse(userIdClaim.Value); // Parse the userId from the claim.
+
+            // Check if the note exists and belongs to the current user.
             var existingNote = await _noteRepository.GetNoteByIdAsync(id);
-            if (existingNote == null || existingNote.UserId != userId)
-            {
-                return NotFound("Note not found or you do not have access.");
-            }
+            if (existingNote == null || existingNote.UserId != userId) return NotFound();
 
-            try
-            {
-                await _noteRepository.DeleteNoteAsync(id, userId.Value);
-                return NoContent();
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
+            await _noteRepository.DeleteNoteAsync(id, userId); // Delete the note.
+            return NoContent(); // Return a success response with no content.
         }
     }
 }

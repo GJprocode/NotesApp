@@ -1,17 +1,18 @@
 using DotNetEnv; // Load environment variables from .env file
-using System.Data; // Required for IDbConnection
-using Microsoft.Data.SqlClient;
-using Microsoft.IdentityModel.Tokens;
-using NotesBE.Data; // Import the namespace for repositories
-using Microsoft.OpenApi.Models;
-using System.Text;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+using System.Data; // Required for database connection interface (IDbConnection)
+using Microsoft.Data.SqlClient; // SQL Server connection and operations
+using Microsoft.IdentityModel.Tokens; // JWT token validation
+using NotesBE.Data; // Repository classes for application logic
+using Microsoft.OpenApi.Models; // For Swagger API documentation
+using System.Text; // Encoding utilities for JWT
+using Microsoft.AspNetCore.Authentication.JwtBearer; // For JWT authentication
 
-Env.Load(); // Load environment variables
+// Load environment variables from .env file
+Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Build the connection string dynamically from .env variables
+// Build the SQL Server connection string dynamically using environment variables
 string connectionString = $"Server={Env.GetString("SQL_SERVER")},{Env.GetString("SQL_PORT")};" +
                           $"Database={Env.GetString("SQL_DATABASE")};" +
                           $"User Id={Env.GetString("SQL_USER")};" +
@@ -20,12 +21,14 @@ string connectionString = $"Server={Env.GetString("SQL_SERVER")},{Env.GetString(
 Console.WriteLine("Using Connection String:");
 Console.WriteLine(connectionString);
 
-// Load JWT configuration
+// Load JWT configuration from environment variables
 string jwtSecret = Env.GetString("JWT_SECRET") ?? throw new InvalidOperationException("JWT_SECRET is missing.");
 string jwtIssuer = Env.GetString("JWT_ISSUER") ?? "NotesBE";
 string jwtAudience = Env.GetString("JWT_AUDIENCE") ?? "NotesBEUsers";
 
 builder.Services.AddControllers();
+
+// Configure Swagger/OpenAPI for API documentation
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -36,6 +39,7 @@ builder.Services.AddSwaggerGen(options =>
         Description = "API documentation for NotesApp backend"
     });
 
+    // Add JWT bearer authentication to Swagger UI
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Type = SecuritySchemeType.Http,
@@ -61,10 +65,12 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
+// Dependency Injection setup for repositories and database connection
 builder.Services.AddScoped<NoteRepository>();
 builder.Services.AddScoped<UserRepository>();
 builder.Services.AddScoped<IDbConnection>(_ => new SqlConnection(connectionString));
 
+// Configure JWT Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -76,10 +82,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = jwtIssuer,
             ValidateAudience = true,
             ValidAudience = jwtAudience,
-            ValidateLifetime = true
+            ValidateLifetime = true // Ensure tokens are not expired
         };
     });
 
+// Configure CORS to allow all origins, methods, and headers
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -92,24 +99,27 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
+// Log incoming HTTP requests for debugging
 app.Use(async (context, next) =>
 {
     Console.WriteLine($"Request: {context.Request.Method} {context.Request.Path}");
     await next();
 });
 
+// Enable Swagger UI in development
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
-app.UseCors("AllowAll");
-app.UseHttpsRedirection();
-app.UseAuthentication();
-app.UseAuthorization();
-app.MapControllers();
+app.UseCors("AllowAll"); // Apply CORS policy
+app.UseHttpsRedirection(); // Redirect HTTP to HTTPS
+app.UseAuthentication(); // Enable JWT authentication middleware
+app.UseAuthorization(); // Enable authorization middleware
+app.MapControllers(); // Map controller routes
 
+// Test SQL Server connection during application startup
 try
 {
     using (var connection = new SqlConnection(connectionString))
@@ -123,35 +133,17 @@ catch (SqlException ex)
     Console.WriteLine($"Error connecting to SQL Server: {ex.Message}");
 }
 
+app.Run(); // Start the application
 
-app.UseCors("AllowAll");
 
-app.MapControllers();
 
-app.Run();
+/*Summary:
+This code sets up an ASP.NET Core Web API with:
 
-/*
- * NOTES:
- * - Swagger auto-detects models from controller actions.
- * - Ensure controllers use `User` and `Note` models in request/response types.
- * - Use Swagger instead of Postman for testing endpoints!
- */
-
-/*
- * NOTES FOR FUTURE EXPANSION
- * --------------------------
- * - Authentication: Add support for JWT authentication and user login/register endpoints.
- * - Authorization: Implement role-based access control (RBAC) for endpoints (e.g., admin vs. regular user).
- * - Validation: Add model validation using Data Annotations or FluentValidation.
- * - Exception Handling: Use a global exception handler to return consistent error responses.
- * - Configuration: Move static configurations to appsettings.json or environment variables for better management.
- * - Caching: Implement caching for frequently used data like notes and user details.
- * - Deployment: Ensure production configurations are set, such as disabling Swagger in production.
- * 
- * ADDITIONAL FEATURES:
- * --------------------
- * - Login and Registration: Add endpoints for user registration, login, and logout.
- * - User Authentication: Secure APIs using authentication tokens (e.g., JWT).
- * - Improved Logging: Integrate a logging library (e.g., Serilog) for advanced logging needs.
- * - Testing: Add comprehensive unit and integration tests for APIs and repositories.
- */
+Environment Variable Loading: For connection strings and JWT secrets.
+SQL Server Connection: Dynamically built using .env values.
+JWT Authentication: Validates user requests with tokens.
+CORS Policy: Allows all origins and methods.
+Swagger: Provides API documentation and testing.
+Dependency Injection: Injects repositories and database connections for clean code separation.
+Request Logging: Outputs HTTP request details during development.*/
