@@ -49,4 +49,4 @@ This is a note-taking application built with Vue.js, C#, and SQL Server.
 * User can only read, update, and delete their own notes.
 * Using Dapper for ORM with a SQL Server database.
 
-This is a basic outline for the Notes application. The specific implementation details may vary depending on your project requirements.
+
