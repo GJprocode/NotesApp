@@ -53,7 +53,7 @@ npm run build
 This will create a production-ready build in the `dist` folder.
 
 ### **6. Backend Integration**
-**Make sure the backend API is running(donnet run) with npm run dev frontend, seperate terminals**, and update the API URL in the frontend if necessary. Modify the `src/utils/api.ts` or relevant configuration file to point to your backend:
+**Make sure the backend API is running(dotnet run) with npm run dev frontend, seperate terminals**, and update the API URL in the frontend if necessary. Modify the `src/utils/api.ts` or relevant configuration file to point to your backend:
 ```typescript
 const API_BASE_URL = 'http://localhost:5000/api';
 ```
