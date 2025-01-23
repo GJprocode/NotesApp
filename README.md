@@ -1,4 +1,4 @@
-# Notes Application Backend
+qqq# Notes Application Backend
 
 This is the backend service for the Notes Application. It provides APIs to handle note-related CRUD operations and user authentication. 
 Built with **C# ASP.NET Core Web API** and uses **SQL Server** as the database.
@@ -69,7 +69,7 @@ dotnet build
 dotnet run
 
  - Restore the project's dependencies  specified in the .csproj file
-   dotnet restore
+  with dotnet restore
 
  - Run the Web API application
    dotnet clean
