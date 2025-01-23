@@ -1,4 +1,4 @@
-# pNotes Application Backend
+# Notes Application Backend
 
 This is the backend service for the Notes Application. It provides APIs to handle note-related CRUD operations and user authentication. 
 Built with **C# ASP.NET Core Web API** and uses **SQL Server** as the database.
