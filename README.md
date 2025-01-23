@@ -50,13 +50,23 @@ Built with **C# ASP.NET Core Web API** and uses **SQL Server** as the database.
      }
      ```
 
-3. **Run Database Migrations**:
+3. **Setup Database**:
    - Use the Entity Framework CLI (optional)
    - connect to your SMSS database. 
     log in with Win machine or SQL Auth      login(secure and preferred)
 
-4. **Run the Application**:
+4. **Setup peoject & terminal commands, to Run the Application**:
    ```bash
+# Create a new ASP.NET Core Web API project for C#
+dotnet new webapi -n YourProjectName
+
+# Navigate into the project directory
+cd YourProjectName
+
+# Restore the project's dependencies specified in the .csproj file
+dotnet restore
+
+# Run the Web API application
    dotnet clean
    dotnet build
    dotnet run
