@@ -60,8 +60,13 @@ Built with **C# ASP.NET Core Web API** and uses **SQL Server** as the database.
    - Create a new ASP.NET Core Web API project for C#
 dotnet new webapi -n YourProjectName
 
- - Navigate into the project directory
-cd YourProjectName
+ - Navigate into the project 
+dotnet new webapi -n YourProjectName  
+cd YourProjectName  
+dotnet restore  
+dotnet clean  
+dotnet build  
+dotnet run
 
  - Restore the project's dependencies  specified in the .csproj file
    dotnet restore
