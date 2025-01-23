@@ -57,16 +57,16 @@ Built with **C# ASP.NET Core Web API** and uses **SQL Server** as the database.
 
 4. **Setup peoject & terminal commands, to Run the Application**:
    ```bash
-# Create a new ASP.NET Core Web API project for C#
+   - Create a new ASP.NET Core Web API project for C#
 dotnet new webapi -n YourProjectName
 
-# Navigate into the project directory
+ - Navigate into the project directory
 cd YourProjectName
 
-# Restore the project's dependencies specified in the .csproj file
+ - Restore the project's dependencies specified in the .csproj file
 dotnet restore
 
-# Run the Web API application
+ - Run the Web API application
    dotnet clean
    dotnet build
    dotnet run
