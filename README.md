@@ -55,7 +55,7 @@ Built with **C# ASP.NET Core Web API** and uses **SQL Server** as the database.
    - connect to your SMSS database. 
     log in with Win machine or SQL Auth      login(secure and preferred)
 
-4. **Setup peoject & terminal commands, to Run the Application**:
+4. **Setup project & terminal commands, to Run the Application**:
    ```bash
    - Create a new ASP.NET Core Web API project for C#
 dotnet new webapi -n YourProjectName
@@ -63,8 +63,8 @@ dotnet new webapi -n YourProjectName
  - Navigate into the project directory
 cd YourProjectName
 
- - Restore the project's dependencies specified in the .csproj file
-dotnet restore
+ - Restore the project's dependencies  specified in the .csproj file
+   dotnet restore
 
  - Run the Web API application
    dotnet clean
