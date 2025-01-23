@@ -1,4 +1,4 @@
-# Notes Application Backend
+qqqqqqqqqqqqqqqq# Notes Application Backend
 
 This is the backend service for the Notes Application. It provides APIs to handle note-related CRUD operations and user authentication. 
 Built with **C# ASP.NET Core Web API** and uses **SQL Server** as the database.
@@ -51,10 +51,9 @@ Built with **C# ASP.NET Core Web API** and uses **SQL Server** as the database.
      ```
 
 3. **Run Database Migrations**:
-   - Use the Entity Framework CLI to set up the database schema:
-     ```bash
-     dotnet ef database update
-     ```
+   - Use the Entity Framework CLI (optional)
+   - connect to your SMSS database. 
+    log in with Win machine or SQL Auth      login(secure and preferred)
 
 4. **Run the Application**:
    ```bash
