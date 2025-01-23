@@ -1,4 +1,4 @@
-# Notes Application Backend
+1q# Notes Application Backend
 
 This is the backend service for the Notes Application. It provides APIs to handle note-related CRUD operations and user authentication. 
 Built with **C# ASP.NET Core Web API** and uses **SQL Server** as the database.
@@ -63,6 +63,6 @@ Built with **C# ASP.NET Core Web API** and uses **SQL Server** as the database.
    ```
 
 ## Notes
-- Certificates setup for secure https requests form frontend. 
+- Certificates setup for secure https requests from frontend. 
 - Ensure the backend URL is properly configured in the frontend for API requests.
 - Use tools ike Postman or Swagger(API Documentation) for testing APIs during development.
