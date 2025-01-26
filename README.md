@@ -8,8 +8,8 @@ This is a note-taking application built with Vue.js, C#, and SQL Server.
 
 * **Create Notes:**
     * Users can create a note with the following fields:
-        * Title (mandatory)
-        * Content (optional)
+        * Title 
+        * Content 
         * Created At (auto-generated date)
         * Updated At (auto-generated when edited)
 * **Read Notes:**
@@ -34,7 +34,7 @@ This is a note-taking application built with Vue.js, C#, and SQL Server.
 
 ### Frontend
 
-* (Optional) Create login/register forms.
+* Create login/register forms.
 * Notes list page which covers all of these CRUD operations (Create, Read, Update, Delete).
 * Simple filtering and sorting functionality.
 * Search functionality.
